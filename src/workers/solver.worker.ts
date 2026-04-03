@@ -61,7 +61,8 @@ class MinHeap {
   }
 }
 
-const MAX_EXPANSIONS = 8_000_000
+/** Only guards runaway bugs; solvable 15-puzzles should finish below this. */
+const MAX_EXPANSIONS = 2_000_000_000
 const PROGRESS_EVERY = 150_000
 
 function reconstructPath(cameFrom: Map<string, string>, lastKey: string, startKey: string): string[] {
@@ -86,6 +87,8 @@ function aStar(start: number[]): { pathKeys: string[] | null; expansions: number
   const open = new MinHeap()
   const gScore = new Map<string, number>()
   const cameFrom = new Map<string, string>()
+  /** States already expanded with optimal g (standard A* closed set). */
+  const closed = new Set<string>()
 
   const h0 = manhattan(start)
   gScore.set(startKey, 0)
@@ -104,6 +107,9 @@ function aStar(start: number[]): { pathKeys: string[] | null; expansions: number
       return { pathKeys, expansions }
     }
 
+    if (closed.has(ck)) continue
+    closed.add(ck)
+
     expansions++
     if (expansions % PROGRESS_EVERY === 0) {
       self.postMessage({
@@ -115,7 +121,7 @@ function aStar(start: number[]): { pathKeys: string[] | null; expansions: number
       return {
         pathKeys: null,
         expansions,
-        error: `Search limit reached (${MAX_EXPANSIONS.toLocaleString()} expansions). Try an easier shuffle.`,
+        error: `Search stopped after ${MAX_EXPANSIONS.toLocaleString()} expansions (memory or time limit). Very few random boards need this.`,
       }
     }
 
@@ -143,13 +149,13 @@ self.onmessage = (ev: MessageEvent<{ start: number[] }>) => {
   const copy = cloneState(start)
   const { pathKeys, expansions, error } = aStar(copy)
   if (error || !pathKeys) {
-  self.postMessage({
-    type: 'done',
-    pathKeys: null,
-    path: null,
-    expansions,
-    error: error ?? 'Failed',
-  })
+    self.postMessage({
+      type: 'done',
+      pathKeys: null,
+      path: null,
+      expansions,
+      error: error ?? 'Failed',
+    })
     return
   }
   const path = pathKeys.map(parseKey)
