@@ -1,5 +1,9 @@
 import { motion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+const SceneBackground = lazy(() =>
+  import('./components/SceneBackground').then((m) => ({ default: m.SceneBackground })),
+)
 import {
   type Difficulty,
   countInversions,
@@ -224,22 +228,31 @@ export function App() {
 
   const won = isSolved(board)
 
+  const glassPanel =
+    'rounded-3xl border border-white/[0.08] bg-slate-950/45 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_24px_48px_-12px_rgba(0,0,0,0.45)] backdrop-blur-2xl'
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-4 py-8 lg:flex-row lg:items-start lg:gap-10">
-        <main className="flex flex-1 flex-col items-center gap-6">
+    <div className="app-grain relative min-h-screen overflow-x-hidden text-slate-100">
+      <Suspense fallback={null}>
+        <SceneBackground />
+      </Suspense>
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-10 lg:flex-row lg:items-start lg:gap-12 lg:px-6 lg:py-12">
+        <main className="flex flex-1 flex-col items-center gap-8">
           <header className="text-center">
-            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+              A* · Manhattan · Web Worker
+            </p>
+            <h1 className="bg-gradient-to-b from-white via-slate-100 to-slate-500 bg-clip-text text-4xl font-semibold tracking-tight text-transparent sm:text-5xl">
               15 Puzzle
             </h1>
-            <p className="mt-2 max-w-md text-sm text-zinc-400">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
               Slide tiles into order. A* search with Manhattan distance runs in a Web Worker so the
               UI stays responsive.
             </p>
           </header>
 
           <div
-            className="grid w-full max-w-[min(100%,360px)] grid-cols-4 gap-2 rounded-2xl bg-zinc-900/80 p-3 shadow-xl ring-1 ring-zinc-800"
+            className={`grid w-full max-w-[min(100%,380px)] grid-cols-4 gap-2.5 p-3.5 ${glassPanel}`}
             role="grid"
             aria-label="Puzzle board"
           >
@@ -249,7 +262,7 @@ export function App() {
                   <div
                     key="empty"
                     role="presentation"
-                    className="flex aspect-square items-center justify-center rounded-xl border-2 border-dashed border-emerald-500/70 bg-emerald-950/40 ring-2 ring-emerald-500/30"
+                    className="flex aspect-square items-center justify-center rounded-2xl border-2 border-dashed border-teal-400/50 bg-teal-950/25 shadow-[inset_0_2px_12px_rgba(0,0,0,0.35)] ring-1 ring-teal-500/20"
                     aria-label="Empty space"
                   />
                 )
@@ -264,13 +277,13 @@ export function App() {
                   disabled={solving || aiAnimating}
                   onClick={() => onTileClick(i)}
                   className={[
-                    'flex aspect-square items-center justify-center rounded-xl text-xl font-semibold shadow-md transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400',
+                    'font-mono-nums flex aspect-square items-center justify-center rounded-2xl text-xl font-semibold tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400/80',
                     correct
-                      ? 'bg-emerald-600 text-white ring-2 ring-emerald-400/80'
-                      : 'bg-zinc-700 text-zinc-50 hover:bg-zinc-600',
-                    solving || aiAnimating ? 'cursor-not-allowed opacity-80' : 'cursor-pointer',
+                      ? 'border border-emerald-400/25 bg-gradient-to-br from-emerald-500 to-teal-700 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]'
+                      : 'border border-white/10 bg-gradient-to-br from-slate-600 to-slate-800 text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:brightness-110',
+                    solving || aiAnimating ? 'cursor-not-allowed opacity-85' : 'cursor-pointer',
                     aiAnimating && aiHighlightTile === val
-                      ? 'relative z-10 ring-4 ring-violet-400 ring-offset-2 ring-offset-zinc-900/90'
+                      ? 'relative z-10 shadow-[0_0_24px_rgba(167,139,250,0.45)] ring-2 ring-violet-400 ring-offset-2 ring-offset-slate-950/90'
                       : '',
                   ].join(' ')}
                   aria-label={`Tile ${val}`}
@@ -282,17 +295,20 @@ export function App() {
           </div>
 
           {won && (
-            <p className="text-center text-emerald-400" role="status">
+            <p
+              className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-center text-sm font-medium text-emerald-300"
+              role="status"
+            >
               Solved — nice work.
             </p>
           )}
 
           {shuffleMeta && (
             <section
-              className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 text-left"
+              className={`w-full max-w-md p-5 text-left ${glassPanel}`}
               aria-label="Board state after last shuffle"
             >
-              <h2 className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <h2 className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">
                 State after shuffle #{shuffleMeta.index}
               </h2>
               <p className="mt-1 text-xs text-zinc-500">
@@ -324,31 +340,31 @@ export function App() {
               <p className="mt-1 text-[10px] text-zinc-600">
                 *Admissible heuristic: true optimal move count can be higher than h.
               </p>
-              <pre className="mt-3 overflow-x-auto rounded-lg bg-zinc-950/80 p-3 font-mono text-sm leading-relaxed text-zinc-300">
+              <pre className="font-mono-nums mt-3 overflow-x-auto rounded-xl border border-white/5 bg-slate-950/60 p-3 text-sm leading-relaxed text-slate-300">
                 {shuffleMeta.grid}
               </pre>
             </section>
           )}
 
           {solving && (
-            <p className="max-w-md text-center text-sm text-zinc-500">
+            <p className="max-w-md text-center text-sm text-slate-500">
               A* is searching in the worker — the board stays still until a full solution path is
               found (no trial moves on the grid).
             </p>
           )}
         </main>
 
-        <aside className="w-full shrink-0 space-y-6 lg:sticky lg:top-8 lg:w-80">
-          <section className="rounded-2xl bg-zinc-900/90 p-5 ring-1 ring-zinc-800">
-            <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">Difficulty</h2>
-            <label className="mt-3 block text-sm text-zinc-300" htmlFor="difficulty">
+        <aside className="w-full shrink-0 space-y-5 lg:sticky lg:top-10 lg:w-[22rem]">
+          <section className={`p-5 ${glassPanel}`}>
+            <h2 className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">Difficulty</h2>
+            <label className="mt-3 block text-sm text-slate-300" htmlFor="difficulty">
               Scramble strength
             </label>
             <select
               id="difficulty"
               value={difficulty}
               onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-              className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="mt-2 w-full cursor-pointer rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2.5 text-sm text-white shadow-inner focus:border-teal-500/50 focus:outline-none focus:ring-2 focus:ring-teal-500/30"
             >
               <option value="easy">Easy — few random moves</option>
               <option value="medium">Medium — moderate scramble</option>
@@ -356,28 +372,28 @@ export function App() {
             </select>
           </section>
 
-          <section className="rounded-2xl bg-zinc-900/90 p-5 ring-1 ring-zinc-800">
-            <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">Performance</h2>
+          <section className={`p-5 ${glassPanel}`}>
+            <h2 className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">Performance</h2>
             <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <dt className="text-zinc-500">Time elapsed</dt>
-                <dd className="mt-1 font-mono text-lg text-white">{formatTime(elapsedMs)}</dd>
+              <div className="rounded-xl border border-white/5 bg-slate-950/40 p-3">
+                <dt className="text-xs text-slate-500">Time elapsed</dt>
+                <dd className="font-mono-nums mt-1 text-lg font-medium text-white">{formatTime(elapsedMs)}</dd>
               </div>
-              <div>
-                <dt className="text-zinc-500">Moves</dt>
-                <dd className="mt-1 font-mono text-lg text-white">{moveCount}</dd>
+              <div className="rounded-xl border border-white/5 bg-slate-950/40 p-3">
+                <dt className="text-xs text-slate-500">Moves</dt>
+                <dd className="font-mono-nums mt-1 text-lg font-medium text-white">{moveCount}</dd>
               </div>
             </dl>
           </section>
 
-          <section className="rounded-2xl bg-zinc-900/90 p-5 ring-1 ring-zinc-800">
-            <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">Controls</h2>
+          <section className={`p-5 ${glassPanel}`}>
+            <h2 className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">Controls</h2>
             <div className="mt-4 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={handleShuffle}
                 disabled={solving}
-                className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-emerald-500 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/25 transition hover:brightness-110 disabled:opacity-50"
               >
                 Shuffle
               </button>
@@ -385,7 +401,7 @@ export function App() {
                 type="button"
                 onClick={handleReset}
                 disabled={solving}
-                className="rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-100 hover:bg-zinc-700 disabled:opacity-50"
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-white/10 disabled:opacity-50"
               >
                 Reset
               </button>
@@ -393,7 +409,7 @@ export function App() {
                 type="button"
                 onClick={handleAiSolve}
                 disabled={solving || aiAnimating || won}
-                className="rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-medium text-white shadow hover:bg-violet-500 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-900/30 transition hover:brightness-110 disabled:opacity-50"
               >
                 {solving ? 'Searching…' : aiAnimating ? 'Animating…' : 'AI Solve (A*)'}
               </button>
@@ -406,8 +422,8 @@ export function App() {
             {solverError && <p className="mt-3 text-sm text-rose-400">{solverError}</p>}
           </section>
 
-          <section className="rounded-2xl bg-zinc-900/90 p-5 ring-1 ring-zinc-800">
-            <h2 className="text-sm font-medium uppercase tracking-wide text-zinc-500">AI solve trace</h2>
+          <section className={`p-5 ${glassPanel}`}>
+            <h2 className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">AI solve trace</h2>
             <p className="mt-2 text-xs leading-relaxed text-zinc-500">
               Search explores many board states off-screen. Here you see the{' '}
               <strong className="text-zinc-400">optimal move sequence</strong> once A* finishes: each
@@ -432,7 +448,7 @@ export function App() {
                 </div>
                 <ul
                   ref={solveLogRef}
-                  className="max-h-52 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-950/80 p-2 text-xs leading-snug"
+                  className="font-mono-nums max-h-52 overflow-y-auto rounded-xl border border-white/5 bg-slate-950/50 p-2 text-xs leading-snug"
                 >
                   {aiPlannedMoves.map((line, i) => (
                     <li
@@ -460,3 +476,4 @@ export function App() {
     </div>
   )
 }
+
