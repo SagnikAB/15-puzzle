@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')
 Set-Location $PSScriptRoot
 
-gh auth status 2>&1 | Out-Null
+cmd /c 'gh auth status >nul 2>&1'
 if ($LASTEXITCODE -ne 0) {
   Write-Host 'Log in first: gh auth login' -ForegroundColor Yellow
   exit 1
